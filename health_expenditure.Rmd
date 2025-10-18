@@ -1,0 +1,179 @@
+
+#„health“ - Total health expenditure, purchasing power parity (USD) per capita, 
+
+#„gdp“ - purchasing power parity (USD) per capita 
+
+#„old65“ - % of population aged 65+ years
+
+
+```{r}
+library(foreign)
+library(readr)
+
+h<-read.csv("C:/Users/user/Downloads/healthgdp.csv")
+h
+
+```
+
+
+
+
+#1)	Make sure that you understand the scales of the variables and look graphs between health expenditure and gdp, and health expenditure and old65
+```{r}
+
+summary(h$health)
+library(lattice)
+
+#Bivariate relationship on the graph. We use xyplot command from `lattice` package.
+#p - point, r -regression line
+
+xyplot(health ~ gdp, data=h, type=c("p", "smooth"))
+
+xyplot(health ~ old65, data=h, type=c("p", "smooth"))
+```
+
+#2)	Estimate a linear model where health expenditure depends on gdp and old65, present the results in a nice stargazer-type table.
+```{r}
+modellin <- lm(health~gdp+old65, data=h)
+summary(modellin)
+```
+```{r}
+library(stargazer)
+stargazer(modellin, type="text", 
+          dep.var.labels=c("Log(Health expenditure)"))
+        
+
+
+```
+#3)	Interpret quantitatively the effects of explanatory variables
+
+
+
+
+
+
+#4)	Explain if both of the explanatory variables are individually statistically significant using t-test
+
+#H0: beta=0. If we p>0.05, we say that we cannot reject H0 that beta is zero at 5% significance level; and vice versa
+#in our model for gdp p-value=2e-16, it is too small than 0.05, therefore we reject our null hypothesis
+#t=19.352 highly significant  p value is to small
+#for old65 p-value=0.347156. We can not reject null hypothesis no relationship
+
+
+#5)	Test and explain if the explanatory variables are jointly statistically significant using F-test
+```{r}
+#restricted model
+model_r<-lm(formula=health~ 1, data=h)
+summary(model_r)
+
+#Unrestricted model
+model_ur<-lm(formula=health~gdp+old65, data=h)
+summary(model_ur)
+
+anova(model_r,model_ur)
+
+```
+#We put our hypothesis like that
+#H0: Restricted model is fine
+#H1: We reject restricted model
+#as a result of anova test p value=2.2e-16(too small) if p-value>0.05 we can not reject NH, but because of result pvalue<0.05, Therefore we can reject null hypothesis.
+
+
+
+
+
+#6)	Test graphically and using Breusch-Pagan test if heteroskedasticity is present. Present the test results and write your conclusion. 
+#  If there is heteroskedasticity present, use robust standard errors and present your model jointly with the model from point (2) in a stargazer tabel.
+
+
+```{r}
+
+library(lmtest)
+library(zoo)
+
+bptest(modellin)
+
+
+h$yhat <- modellin$fitted.values
+h$uhat <- modellin$residuals
+
+#Lets do graphical tests
+#Are squared residuals related to predicted values?
+library(ggplot2)
+require(ggplot2)
+ggplot(h, aes(x=yhat, y=uhat^2)) +
+  geom_point()+
+  labs(x="Predicted values", y="Residuals squared") +
+  geom_smooth()
+
+
+
+```
+#In order to test heteroskedasticity let`s do hypothesis
+#H0: no heteroskedasticity
+#H1: heteroskedasticity
+#if p>0.05 we do not reject Null hypothesisi or vice versa
+#as a result of Bp test p-value is too small and less than 0.05 we reject NH tha there is heteroskedasticity
+#At the same time, according ti grapg it is concluded that there is heteroskedasticity.
+
+
+
+6a)If there is heteroskedasticity present, use robust standard errors and present your model jointly with the model from point (2) in a stargazer tabel.
+
+
+#7)	Test if the functional form is correct using RESET test (use powers 2 and 3). Present the test results and write your conclusion.
+
+```{r}
+
+library(lmtest)
+require(lmtest)
+summary(modellin)
+resettest(modellin, power=2:3, type = c("fitted"))
+
+
+```
+#H0: There is linearity in model
+#H1:reject null hypothesis
+#if p-value>0.05 we cannot reject NH So, 
+#1.478e-09 is too small p-value which less than 0.05, We reject our Null Hypothesis( there is no linearity in model)
+
+
+
+8)	Is there any outlier countries in the data that might influence your results? If yes, briefly mention that.
+
+
+```{r}
+
+
+library(mosaic)
+mplot(modellin, which=1)
+
+
+```
+
+
+#As seen from the graph, we have 3 outlier countries at the both ends
+
+
+
+
+
+9)	If you find that you should use more non-linear relationship based on RESET test, estimate the model again with logged health expenditure and logged gdp (keeping old65 in its form). Test again in the new model if functional form is ok. Present the results in a stargazer table together with models estimated in point (2) and (6).
+```{r}
+
+modelnew<-lm(log(health)~log(gdp)+old65, data=h)
+summary(modelnew) 
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
